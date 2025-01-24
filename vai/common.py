@@ -22,11 +22,15 @@ split. ! queue ! qtivcomposer name=mixer1 ! queue ! videoconvert ! video/x-raw,f
 split. ! queue ! qtimlvconverter ! queue ! qtimlsnpe delegate=dsp model=/opt/inceptionv3.dlc ! queue ! qtimlvclassification threshold=40.0 results=2 module=mobilenet labels=/opt/classification.labels \
 ! video/x-raw,format=BGRA,width=640,height=480 ! queue ! mixer1."
 
+CLASSIFICATION = "output.mp4"
+
+"""
 CLASSIFICATION = 'gst-launch-1.0 \
-camera=x ! video/x-raw\(memory:GBM\),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \
+filesrc location=output.mp4 ! decodebin ! videoconvert ! video/x-raw,format=NV12,width=640,height=480,framerate=30/1 ! queue ! tee name=split \
 split. ! queue ! qtivcomposer name=mixer sink_1::position="<30,30>" sink_1::dimensions="<320, 180>" ! queue ! videoconvert ! video/x-raw,format=BGRA ! appsink drop=1 \
 split. ! queue ! qtimlvconverter ! queue ! qtimlsnpe delegate=dsp model=/opt/inceptionv3.dlc ! queue ! qtimlvclassification threshold=40.0 results=2 \
 module=mobilenet labels=/opt/classification.labels ! video/x-raw,format=BGRA,width=640,height=360 ! queue ! mixer.'
+"""
 
 OBJECT_DETECTION = 'gst-launch-1.0 \
 camera=x ! video/x-raw\(memory:GBM\),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \

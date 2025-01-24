@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import threading
+from time import sleep
 
 import gi
 
@@ -156,16 +157,16 @@ class Video:
         self.eventHandler.GPU_temp = GladeBuilder.get_object("GPU_temp")
         self.eventHandler.MEM_temp = GladeBuilder.get_object("MEM_temp")
 
-        self.eventHandler.demoProcess0 = camThread(self.eventHandler.getCommand(1, 0))
+        self.eventHandler.demoProcess0 = camThread(self.eventHandler.getCommand(4, 0))
         self.eventHandler.demoProcess1 = camThread(self.eventHandler.getCommand(1, 1))
         self.eventHandler.QProf = QProfProcess()
 
         self.eventHandler.MainWindow.fullscreen()
         self.eventHandler.MainWindow.show_all()
 
-        # self.eventHandler.demoProcess0.start()
-        # while self.eventHandler.demoProcess0.FrameOk == False:
-        #    sleep(0.1)
+        self.eventHandler.demoProcess0.start()
+        while self.eventHandler.demoProcess0.FrameOk == False:
+            sleep(0.1)
 
         # self.eventHandler.demoProcess1.start()
         # while self.eventHandler.demoProcess1.FrameOk == False:
