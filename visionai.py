@@ -65,21 +65,26 @@ class QProfProcess(threading.Thread):
             rb"(?:\x1B[@-Z\\-_]|[\x80-\x9A\x9C-\x9F]|(?:\x1B\[|\x9B)[0-?]*[ -/]*[@-~])"
         )
         while self.enabled:
-            p = subprocess.Popen(
-                "qprof \
-                                    --profile \
-                                    --profile-type async \
-                                    --result-format CSV \
-                                    --capabilities-list profiler:apps-proc-cpu-metrics profiler:proc-gpu-specific-metrics profiler:apps-proc-mem-metrics \
-                                    --profile-time 10 \
-                                    --sampling-rate 50 \
-                                    --streaming-rate 500 \
-                                    --live \
-                                    --metric-id-list 4648 4616 4865".split(),
-                shell=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
+            try:
+                p = subprocess.Popen(
+                    "qprof \
+                                        --profile \
+                                        --profile-type async \
+                                        --result-format CSV \
+                                        --capabilities-list profiler:apps-proc-cpu-metrics profiler:proc-gpu-specific-metrics profiler:apps-proc-mem-metrics \
+                                        --profile-time 10 \
+                                        --sampling-rate 50 \
+                                        --streaming-rate 500 \
+                                        --live \
+                                        --metric-id-list 4648 4616 4865".split(),
+                    shell=False,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            except:
+                self.enabled = False
+                pass
+
             while self.enabled:
                 # line = p.stdout.readline().decode('utf-8').encode("ascii","ignore")
                 line = p.stdout.readline().decode("utf-8").encode("ascii", "ignore")
@@ -148,9 +153,9 @@ class Video:
         cr.set_line_width(2)
         for i in range(3):
             cr.set_source_rgb(*GRAPH_COLORS_RGBF[i])
-            cr.move_to(0, height // 2 + self.graph_data[i][0])
+            cr.move_to(0, height // 2 + (self.graph_data[i][0]*height/100))
             for x in range(1, len(self.graph_data[i])):
-                cr.line_to(x, height // 2 + self.graph_data[i][x])
+                cr.line_to(x, height // 2 + (self.graph_data[i][x]*height/100))
             cr.stroke()
 
         # --- Draw Legend ---
