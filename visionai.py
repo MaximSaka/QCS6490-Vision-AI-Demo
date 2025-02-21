@@ -4,14 +4,15 @@ import collections
 import math
 import os
 import threading
+import time
 
 import gi
 
 from vai.common import (APP_HEADER, CPU_THERMAL_KEY, CPU_UTIL_KEY,
-                        GPU_THERMAL_KEY, GPU_UTIL_KEY, GRAPH_SAMPLE_SIZE,
-                        MEM_THERMAL_KEY, MEM_UTIL_KEY, TRIA, TRIA_BLUE_RGBH,
-                        TRIA_PINK_RGBH, TRIA_WHITE_RGBH, TRIA_YELLOW_RGBH,
-                        GRAPH_DRAW_PERIOD_ms, GRAPH_SAMPLE_WINDOW_SIZE_s)
+                        GPU_THERMAL_KEY, GPU_UTIL_KEY, MEM_THERMAL_KEY,
+                        MEM_UTIL_KEY, TIME_KEY, TRIA, TRIA_PINK_RGBH,
+                        TRIA_WHITE_RGBH, TRIA_YELLOW_RGBH,
+                        GRAPH_SAMPLE_WINDOW_SIZE_s)
 from vai.handler import Handler
 from vai.qprofile import QProfProcess
 
@@ -43,7 +44,7 @@ THERMAL_GRAPH_COLORS_RGBF = {
 }
 
 GRAPH_LABEL_FONT_SIZE = 14
-
+THERMAL_MIN_C, THERMAL_MAX_C = (32, 120)
 GladeBuilder = Gtk.Builder()
 APP_FOLDER = os.path.dirname(__file__)
 RESOURCE_FOLDER = os.path.join(APP_FOLDER, "resources")
@@ -120,7 +121,7 @@ def draw_axes_and_labels(
     for i in range(x_ticks + 1):
         x_val = x_min + i * dx
         # Convert data → screen coordinate: 0..width
-        x_screen = int((x_val - x_min) / (x_max - x_min) * width)
+        x_screen = int((x_val - x_min) / (x_max - x_min) * width) if x_max != x_min else 0
 
         # Tick mark from (x_screen, height) up a bit
         tick_length = 6
@@ -231,6 +232,7 @@ def draw_graph_data(data_map, data_color_map, width, height, cr, y_lim=(0, 100))
 
     # TODO: simply draw the sampled data where data_color_zip[0][0] is the y value for x=0.
     for data_key, data in data_map.items():
+        if data_key not in data_color_map: continue # skip time key
         cr.set_source_rgb(*data_color_map[data_key])
         cr.move_to(0, int(lerp(y_lim[0], height, 1 - data[0] / y_lim[1])))
         for x in range(1, len(data)):
@@ -251,17 +253,19 @@ class VaiDemoManager:
         self.localAppThread = threading.Thread(target=self.localApp)
         self.localAppThread.start()
 
-    def init_graph_data(self, sample_size=GRAPH_SAMPLE_SIZE):
+    def init_graph_data(self):
         """Initialize the graph data according to graph box size"""
         self.util_data = {
-            CPU_UTIL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
-            MEM_UTIL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
-            GPU_UTIL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
+            TIME_KEY: collections.deque(),
+            CPU_UTIL_KEY: collections.deque(),
+            MEM_UTIL_KEY: collections.deque(),
+            GPU_UTIL_KEY: collections.deque(),
         }
         self.thermal_data = {
-            CPU_THERMAL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
-            MEM_THERMAL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
-            GPU_THERMAL_KEY: collections.deque([0] * sample_size, maxlen=sample_size),
+            TIME_KEY: collections.deque(),
+            CPU_THERMAL_KEY: collections.deque(),
+            MEM_THERMAL_KEY: collections.deque(),
+            GPU_THERMAL_KEY: collections.deque(),
         }
 
     def on_util_graph_draw(self, widget, cr):
@@ -270,17 +274,25 @@ class VaiDemoManager:
         if self.util_data is None or self.thermal_data is None:
             self.init_graph_data()
 
+        cur_time = time.monotonic()
         self.util_data[CPU_UTIL_KEY].append(self.eventHandler.sample_data[CPU_UTIL_KEY])
         self.util_data[GPU_UTIL_KEY].append(self.eventHandler.sample_data[GPU_UTIL_KEY])
         self.util_data[MEM_UTIL_KEY].append(self.eventHandler.sample_data[MEM_UTIL_KEY])
+        self.util_data[TIME_KEY].append(cur_time)
+        while cur_time - self.util_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
+            self.util_data[CPU_UTIL_KEY].popleft()
+            self.util_data[GPU_UTIL_KEY].popleft()
+            self.util_data[MEM_UTIL_KEY].popleft()
+            self.util_data[TIME_KEY].popleft()
 
         width = widget.get_allocated_width()
         height = widget.get_allocated_height()
-        right_margin = 40
+        right_margin = 50
         bottom_margin = 20
         draw_graph_background_and_border(width, height, cr)
-        # legend_x = draw_graph_legend(UTIL_GRAPH_COLORS_RGBF, width, cr, 220)
-        x_lim = (-GRAPH_SAMPLE_WINDOW_SIZE_s, 0)
+        old_time = self.util_data[TIME_KEY][0]
+        cur_time = self.util_data[TIME_KEY][-1]
+        x_lim = (int(old_time-cur_time), 0)
         y_lim = (0, 100)
         draw_axes_and_labels(
             cr,
@@ -313,6 +325,7 @@ class VaiDemoManager:
         if self.thermal_data is None:
             self.init_graph_data()
 
+        cur_time = time.monotonic()
         self.thermal_data[CPU_THERMAL_KEY].append(
             self.eventHandler.sample_data[CPU_THERMAL_KEY]
         )
@@ -322,14 +335,22 @@ class VaiDemoManager:
         self.thermal_data[MEM_THERMAL_KEY].append(
             self.eventHandler.sample_data[MEM_THERMAL_KEY]
         )
+        self.thermal_data[TIME_KEY].append(cur_time)
+        while cur_time - self.thermal_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
+            self.thermal_data[CPU_THERMAL_KEY].popleft()
+            self.thermal_data[GPU_THERMAL_KEY].popleft()
+            self.thermal_data[MEM_THERMAL_KEY].popleft()
+            self.thermal_data[TIME_KEY].popleft()
 
         width = widget.get_allocated_width()
         height = widget.get_allocated_height()
-        right_margin = 40
+        right_margin = 50
         bottom_margin = 20
         draw_graph_background_and_border(width, height, cr)
-        x_lim = (-GRAPH_SAMPLE_WINDOW_SIZE_s, 0)
-        y_lim = (0, 70)
+        old_time = self.thermal_data[TIME_KEY][0]
+        cur_time = self.thermal_data[TIME_KEY][-1]
+        x_lim = (int(old_time-cur_time), 0)
+        y_lim = (THERMAL_MIN_C, THERMAL_MAX_C)
         draw_axes_and_labels(
             cr,
             width,
@@ -343,12 +364,6 @@ class VaiDemoManager:
             x_label="seconds",
             y_label="°C",
         )
-        # legend_x = draw_graph_legend(
-        #    THERMAL_GRAPH_COLORS_RGBF,
-        #    width,
-        #    cr,
-        #    220,
-        # )
         draw_graph_data(
             self.thermal_data,
             THERMAL_GRAPH_COLORS_RGBF,
@@ -366,9 +381,17 @@ class VaiDemoManager:
         if self.util_data is None:  # Graph data not initialized
             return True
 
+        cur_time = time.monotonic()
         self.util_data[CPU_UTIL_KEY].append(self.eventHandler.sample_data[CPU_UTIL_KEY])
         self.util_data[GPU_UTIL_KEY].append(self.eventHandler.sample_data[GPU_UTIL_KEY])
         self.util_data[MEM_UTIL_KEY].append(self.eventHandler.sample_data[MEM_UTIL_KEY])
+        self.util_data[TIME_KEY].append(cur_time)
+        while cur_time - self.util_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
+            self.util_data[CPU_UTIL_KEY].popleft()
+            self.util_data[GPU_UTIL_KEY].popleft()
+            self.util_data[MEM_UTIL_KEY].popleft()
+            self.util_data[TIME_KEY].popleft()
+
         self.thermal_data[CPU_THERMAL_KEY].append(
             self.eventHandler.sample_data[CPU_THERMAL_KEY]
         )
@@ -378,7 +401,13 @@ class VaiDemoManager:
         self.thermal_data[MEM_THERMAL_KEY].append(
             self.eventHandler.sample_data[MEM_THERMAL_KEY]
         )
-        # For each wave, pop the oldest sample and append a new one
+        self.thermal_data[TIME_KEY].append(cur_time)
+        while cur_time - self.thermal_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
+            self.thermal_data[CPU_THERMAL_KEY].popleft()
+            self.thermal_data[GPU_THERMAL_KEY].popleft()
+            self.thermal_data[MEM_THERMAL_KEY].popleft()
+            self.thermal_data[TIME_KEY].popleft()
+
         """
         If you want to simulate a wave, modify can use the following code
         elapsed = time.time()
@@ -435,7 +464,6 @@ class VaiDemoManager:
         self.util_data = None
         self.thermal_data = None
         self.phases = [0, math.pi / 3, 2 * math.pi / 3]
-        # GLib.timeout_add(GRAPH_DRAW_PERIOD_ms, self.update_graph)
 
         self.eventHandler.QProf = QProfProcess()
 

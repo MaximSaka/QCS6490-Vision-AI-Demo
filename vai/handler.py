@@ -5,25 +5,11 @@ from time import sleep
 
 import gi
 
-from .common import (
-    APP_NAME,
-    CAMERA,
-    CLASSIFICATION,
-    CPU_THERMAL_KEY,
-    CPU_UTIL_KEY,
-    DEFAULT_DUAL_WINDOW,
-    DEFAULT_LEFT_WINDOW,
-    DEPTH_SEGMENTATION,
-    GPU_THERMAL_KEY,
-    GPU_UTIL_KEY,
-    GRAPH_SAMPLE_SIZE,
-    MEM_THERMAL_KEY,
-    MEM_UTIL_KEY,
-    OBJECT_DETECTION,
-    POSE_DETECTION,
-    SEGMENTATION,
-    HW_SAMPLING_PERIOD_ms,
-)
+from .common import (APP_NAME, CAMERA, CLASSIFICATION, CPU_THERMAL_KEY,
+                     CPU_UTIL_KEY, DEFAULT_DUAL_WINDOW, DEFAULT_LEFT_WINDOW,
+                     DEPTH_SEGMENTATION, GPU_THERMAL_KEY, GPU_UTIL_KEY,
+                     MEM_THERMAL_KEY, MEM_UTIL_KEY, OBJECT_DETECTION,
+                     POSE_DETECTION, SEGMENTATION, HW_SAMPLING_PERIOD_ms)
 from .gst_thread import GstPipeline
 from .psutil_profile import get_cpu_gpu_mem_temps
 
