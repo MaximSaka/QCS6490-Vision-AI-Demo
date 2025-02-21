@@ -2,12 +2,8 @@
 
 import subprocess
 
-GRAPH_SAMPLE_WINDOW_SIZE_s = 15
+GRAPH_SAMPLE_WINDOW_SIZE_s = 16
 HW_SAMPLING_PERIOD_ms = 250
-GRAPH_DRAW_PERIOD_ms = 30
-
-# TODO: relate this with qprof rate
-GRAPH_SAMPLE_SIZE = int(GRAPH_SAMPLE_WINDOW_SIZE_s * 1000 / GRAPH_DRAW_PERIOD_ms)
 
 CPU_UTIL_KEY = "cpu %"
 MEM_UTIL_KEY = "lpddr5 %"
@@ -15,6 +11,7 @@ GPU_UTIL_KEY = "gpu %"
 CPU_THERMAL_KEY = "cpu temp (°c)"
 MEM_THERMAL_KEY = "lpddr5 temp (°c)"
 GPU_THERMAL_KEY = "gpu temp (°c)"
+TIME_KEY = "time"
 
 TRIA_PINK_RGBH = (0xFE, 0x00, 0xA2)
 TRIA_BLUE_RGBH = (0x00, 0x19, 0x4F)
