@@ -376,52 +376,6 @@ class VaiDemoManager:
         self.eventHandler.GraphDrawAreaBottom.queue_draw()
         return True
 
-    def update_graph(self):
-        """Update the graph values for real-time rendering"""
-        if self.util_data is None:  # Graph data not initialized
-            return True
-
-        cur_time = time.monotonic()
-        self.util_data[CPU_UTIL_KEY].append(self.eventHandler.sample_data[CPU_UTIL_KEY])
-        self.util_data[GPU_UTIL_KEY].append(self.eventHandler.sample_data[GPU_UTIL_KEY])
-        self.util_data[MEM_UTIL_KEY].append(self.eventHandler.sample_data[MEM_UTIL_KEY])
-        self.util_data[TIME_KEY].append(cur_time)
-        while cur_time - self.util_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
-            self.util_data[CPU_UTIL_KEY].popleft()
-            self.util_data[GPU_UTIL_KEY].popleft()
-            self.util_data[MEM_UTIL_KEY].popleft()
-            self.util_data[TIME_KEY].popleft()
-
-        self.thermal_data[CPU_THERMAL_KEY].append(
-            self.eventHandler.sample_data[CPU_THERMAL_KEY]
-        )
-        self.thermal_data[GPU_THERMAL_KEY].append(
-            self.eventHandler.sample_data[GPU_THERMAL_KEY]
-        )
-        self.thermal_data[MEM_THERMAL_KEY].append(
-            self.eventHandler.sample_data[MEM_THERMAL_KEY]
-        )
-        self.thermal_data[TIME_KEY].append(cur_time)
-        while cur_time - self.thermal_data[TIME_KEY][0] > GRAPH_SAMPLE_WINDOW_SIZE_s:
-            self.thermal_data[CPU_THERMAL_KEY].popleft()
-            self.thermal_data[GPU_THERMAL_KEY].popleft()
-            self.thermal_data[MEM_THERMAL_KEY].popleft()
-            self.thermal_data[TIME_KEY].popleft()
-
-        """
-        If you want to simulate a wave, modify can use the following code
-        elapsed = time.time()
-        for i in range(3):
-            self.graph_data[i].pop(0)
-            # Eachwave has a different phase
-            new_value = int(30 * math.sin(elapsed * 2 + self.phases[i]))
-            self.graph_data[i].append(new_value)
-        """
-        # Request a redraw
-        self.eventHandler.GraphDrawAreaTop.queue_draw()
-        self.eventHandler.GraphDrawAreaBottom.queue_draw()
-        return True
-
     def localApp(self):
         global GladeBuilder
 
