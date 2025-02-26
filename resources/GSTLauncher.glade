@@ -212,6 +212,21 @@
       <row>
         <col id="0">Depth Segmentation</col>
       </row>
+      <row>
+        <col id="0">GoogleNet Classification</col>
+      </row>
+      <row>
+        <col id="0">HR Human Pose Estimation</col>
+      </row>
+      <row>
+        <col id="0">Super Resolution</col>
+      </row>
+      <row>
+        <col id="0">Segmentation Automotive</col>
+      </row>
+      <row>
+        <col id="0">Segmentation_HTP</col>
+      </row>
     </data>
   </object>
   <object class="GtkWindow" id="mainWindow">
