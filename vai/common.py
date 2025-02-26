@@ -72,6 +72,73 @@ DEPTH_SEGMENTATION = "<DATA_SRC> ! qtivtransform ! \
         video/x-raw,width=960,height=720 ! queue ! dual.sink_1"
 
 
+#AI-HUB models
+
+GOOGLENET_CLASSIFFICATION ="<DATA_SRC> ! \
+    qtivtransform ! \
+    video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc ! \
+    queue ! tee name=split \
+    split. ! queue ! \
+    qtivcomposer name=mixer ! \
+    queue ! <SINGLE_DISPLAY> \
+    split. ! queue ! \
+    qtimlvconverter ! \
+    queue ! \
+    qtimltflite \
+        delegate=external \
+        external-delegate-path=libQnnTFLiteDelegate.so \
+        external-delegate-options=QNNExternalDelegate,backend_type=htp \
+        model=/opt/googlenet_quantized.tflite ! \
+    queue ! \
+    qtimlvclassification \
+        threshold=51.0 \
+        results=5 \
+        module=mobilenet \
+        labels=/opt/imagenet_labels.txt \
+        extra-operation=softmax \
+        constants=Mobilenet,q-offsets=<53.0>,q-scales=<0.08174873143434525> ! \
+    video/x-raw,format=BGRA,width=640,height=480 ! \
+    queue ! mixer."
+
+HRH_POSE_ESTIMATION ='<DATA_SRC> ! qtivtransform ! \
+video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc ! queue ! tee name=split \
+split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
+split. ! queue ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so external-delegate-options=QNNExternalDelegate,backend_type=htp \
+model=/opt/GA1.3-rel/hrnet_pose_quantized.tflite ! queue ! qtimlvpose threshold=51 module=hrnet \
+labels=/opt/GA1.3-rel/hrnet_pose.labels constants="hrnet,q-offsets=<8.0>,q-scales=<0.0040499246679246426>" ! video/x-raw,format=BGRA,width=640,height=480 ! \
+queue ! mixer.'
+
+SUPER_RESOLUTION = '<DATA_SRC> ! qtivtransform ! video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc ! tee name=split \
+split. ! queue ! qtivcomposer name=mixer ! <SINGLE_DISPLAY> \
+split. ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so \
+external-delegate-options="QNNExternalDelegate,backend_type=htp;" model=/opt/GA1.3-rel/quicksrnetsmall_quantized.tflite ! \
+queue ! qtimlvsuperresolution module=srnet constants="qsrnetsmall,q-offsets=<0.0>,q-scales=<1.0>;" ! \
+video/x-raw(memory:GBM),format=RGB ! queue ! mixer.'
+
+SEGMENTATION_AUTOMOTIVE = '<DATA_SRC> ! qtivtransform ! video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \
+split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
+split. ! queue ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so \
+external-delegate-options=QNNExternalDelegate,backend_type=htp model=/opt/ffnet_40s_quantized_aihub.tflite ! queue ! \
+qtimlvsegmentation module=deeplab-argmax labels=/opt/voc_labels.txt constants=ffnet,q-offsets=<178.0>,q-scales=<0.2929433584213257> ! \
+video/x-raw,format=BGRA,width=640,height=480 ! queue ! mixer.'
+
+SEGMENTATION_HTP = '<DATA_SRC> ! qtivtransform ! video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \
+split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
+split. ! queue ! \
+  qtimlvconverter ! queue ! \
+  qtimltflite \
+      delegate=external \
+      external-delegate-path=libQnnTFLiteDelegate.so \
+      external-delegate-options="QNNExternalDelegate,backend_type=htp" \
+      model=/opt/deeplabv3_plus_mobilenet_quantized_aihub.tflite ! queue ! \
+  qtimlvsegmentation \
+      module=deeplab-argmax \
+      labels=/opt/voc_labels.txt \
+      constants="deeplab,q-offsets=<0.0>,q-scales=<1.0>" ! \
+  video/x-raw,format=BGRA,width=640,height=480 ! \
+  queue ! mixer.'
+
+
 APP_NAME = f"QCS6490 Vision AI"
 
 TRIA = r"""
