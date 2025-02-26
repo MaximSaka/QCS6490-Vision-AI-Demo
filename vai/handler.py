@@ -23,6 +23,11 @@ from .common import (
     POSE_DETECTION,
     SEGMENTATION,
     HW_SAMPLING_PERIOD_ms,
+    GOOGLENET_CLASSIFFICATION,
+    HRH_POSE_ESTIMATION,
+    SUPER_RESOLUTION,
+    SEGMENTATION_AUTOMOTIVE,
+    SEGMENTATION_HTP,
 )
 from .gst_thread import GstPipeline
 from .psutil_profile import get_cpu_gpu_mem_temps
@@ -50,6 +55,12 @@ class Handler:
             CLASSIFICATION,
             OBJECT_DETECTION,
             DEPTH_SEGMENTATION,
+            GOOGLENET_CLASSIFFICATION,
+            HRH_POSE_ESTIMATION,
+            SUPER_RESOLUTION,
+            SEGMENTATION_AUTOMOTIVE,
+            SEGMENTATION_HTP,
+
         ]
         self.demoProcess0 = None
         self.demoProcess1 = None
