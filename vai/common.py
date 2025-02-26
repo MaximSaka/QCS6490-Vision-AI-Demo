@@ -72,9 +72,9 @@ DEPTH_SEGMENTATION = "<DATA_SRC> ! qtivtransform ! \
         video/x-raw,width=960,height=720 ! queue ! dual.sink_1"
 
 
-#AI-HUB models
+# AI-HUB models
 
-GOOGLENET_CLASSIFFICATION ="<DATA_SRC> ! \
+GOOGLENET_CLASSIFFICATION = "<DATA_SRC> ! \
     qtivtransform ! \
     video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc ! \
     queue ! tee name=split \
@@ -100,7 +100,7 @@ GOOGLENET_CLASSIFFICATION ="<DATA_SRC> ! \
     video/x-raw,format=BGRA,width=640,height=480 ! \
     queue ! mixer."
 
-HRH_POSE_ESTIMATION ='<DATA_SRC> ! qtivtransform ! \
+HRH_POSE_ESTIMATION = '<DATA_SRC> ! qtivtransform ! \
 video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc ! queue ! tee name=split \
 split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
 split. ! queue ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so external-delegate-options=QNNExternalDelegate,backend_type=htp \
@@ -115,15 +115,8 @@ external-delegate-options="QNNExternalDelegate,backend_type=htp;" model=/opt/GA1
 queue ! qtimlvsuperresolution module=srnet constants="qsrnetsmall,q-offsets=<0.0>,q-scales=<1.0>;" ! \
 video/x-raw(memory:GBM),format=RGB ! queue ! mixer.'
 
-SEGMENTATION_AUTOMOTIVE = '<DATA_SRC> ! qtivtransform ! video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \
-split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
-split. ! queue ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so \
-external-delegate-options=QNNExternalDelegate,backend_type=htp model=/opt/ffnet_40s_quantized_aihub.tflite ! queue ! \
-qtimlvsegmentation module=deeplab-argmax labels=/opt/voc_labels.txt constants=ffnet,q-offsets=<178.0>,q-scales=<0.2929433584213257> ! \
-video/x-raw,format=BGRA,width=640,height=480 ! queue ! mixer.'
-
 SEGMENTATION_HTP = '<DATA_SRC> ! qtivtransform ! video/x-raw(memory:GBM),format=NV12,width=640,height=480,framerate=30/1,compression=ubwc !queue ! tee name=split \
-split. ! queue ! qtivcomposer name=mixer ! queue ! <SINGLE_DISPLAY> \
+split. ! queue ! qtivcomposer name=mixer sink_1::alpha=0.65 ! queue ! <SINGLE_DISPLAY> \
 split. ! queue ! \
   qtimlvconverter ! queue ! \
   qtimltflite \

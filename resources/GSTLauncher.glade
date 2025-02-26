@@ -222,9 +222,6 @@
         <col id="0">Super Resolution</col>
       </row>
       <row>
-        <col id="0">Segmentation Automotive</col>
-      </row>
-      <row>
         <col id="0">Segmentation_HTP</col>
       </row>
     </data>
