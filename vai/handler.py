@@ -1,4 +1,5 @@
 import pathlib
+import re
 import signal
 import subprocess
 import sys
@@ -24,7 +25,7 @@ from .common import (
     SEGMENTATION,
     HW_SAMPLING_PERIOD_ms,
 )
-from .gst_thread import GstPipeline
+from .gst_pipeline_runner import GST_WATCHDOG_TIMER_MAX_s, GstPipeline
 from .psutil_profile import get_cpu_gpu_mem_temps
 
 # Locks app version, prevents warnings
@@ -40,6 +41,11 @@ MAX_WINDOW_HEIGHT = 720
 DUAL_WINDOW_DEMOS = ["depth segmentation"]
 
 PIPELINE_HEALTH_SIGNAL = "identity signal-handoffs=true name=id"
+
+GST_ENV_VARS = {
+    "XDG_RUNTIME_DIR": "/dev/socket/weston",
+    "WAYLAND_DISPLAY": "wayland-1",
+}
 
 
 class Handler:
@@ -203,10 +209,12 @@ class Handler:
             self.QProf.Close()
 
         if self.demoProcess0 is not None:
-            self.demoProcess0.close()
+            self.demoProcess0.terminate()
+            self.demoProcess0.wait()
 
         if self.demoProcess1 is not None:
-            self.demoProcess1.close()
+            self.demoProcess1.terminate()
+            self.demoProcess1.wait()
 
         Gtk.main_quit(*args)
 
@@ -309,30 +317,48 @@ class Handler:
                 self.dualDemoRunning1 = False
 
         if kill0 and self.demoProcess0 is not None:
-            self.demoProcess0.close()
+            self.demoProcess0.terminate()
+            self.demoProcess0.wait()
         if kill1 and self.demoProcess1 is not None:
-            self.demoProcess1.close()
+            self.demoProcess1.terminate()
+            self.demoProcess1.wait()
         sleep(1)
 
     def demo0_selection_changed_cb(self, combo):
         """Signal handler for the 1st demo selection combo box."""
         self.kill_demos(0, combo)
-        index = combo.get_active()
-        if index == 0:
+        model_index = combo.get_active()
+        if model_index == 0:
             self.demoProcess0 = None
         else:
-            self.demoProcess0 = GstPipeline(self.getCommand(index, 0))
-            self.demoProcess0.start()
+            # Run processes to let OS free memory that gst parse launch leaks
+            proc_command = [
+                "python3",
+                "vai/gst_pipeline_runner.py",
+                self.getCommand(model_index, 0),
+            ]
+            self.demoProcess0 = subprocess.Popen(
+                proc_command,
+                env=GST_ENV_VARS,
+            )
 
     def demo1_selection_changed_cb(self, combo):
         """Signal handler for the 2nd demo selection combo box."""
         self.kill_demos(1, combo)
-        index = combo.get_active()
-        if index == 0:
+        model_index = combo.get_active()
+        if model_index == 0:
             self.demoProcess1 = None
         else:
-            self.demoProcess1 = GstPipeline(self.getCommand(index, 1))
-            self.demoProcess1.start()
+            # Run processes to let OS free memory that gst parse launch leaks
+            proc_command = [
+                "python3",
+                "vai/gst_pipeline_runner.py",
+                self.getCommand(model_index, 1),
+            ]
+            self.demoProcess1 = subprocess.Popen(
+                proc_command,
+                env=GST_ENV_VARS,
+            )
 
     def IdleUpdateLabels(self, label, text):
         GLib.idle_add(label.set_text, text)
