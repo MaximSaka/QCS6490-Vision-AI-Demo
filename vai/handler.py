@@ -26,7 +26,7 @@ from .common import (
     HW_SAMPLING_PERIOD_ms,
 )
 from .gst_thread import GstPipeline
-from .psutil_profile import get_cpu_gpu_mem_temps
+from .temp_profile import get_cpu_gpu_mem_temps
 
 # Locks app version, prevents warnings
 gi.require_version("Gtk", "3.0")
@@ -208,6 +208,9 @@ class Handler:
     def open_about(self, *args):
         self.aboutWindow.set_transient_for(self.MainWindow)
         self.aboutWindow.run()
+    
+    def on_mainWindow_show(self, *args):
+        return
 
     def on_mainWindow_destroy(self, *args):
         if self.QProf is not None:

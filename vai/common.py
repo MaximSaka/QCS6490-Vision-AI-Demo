@@ -22,6 +22,7 @@ GPU_THERMAL_KEY = "gpu temp (°c)"
 TRIA_PINK_RGBH = (0xFE, 0x00, 0xA2)
 TRIA_BLUE_RGBH = (0x00, 0xA2, 0xFE)
 TRIA_YELLOW_RGBH = (0xFE, 0xDB, 0x00)
+TRIA_GREEN_RGBH = (0x22, 0xB1, 0x4C)
 
 # WARN: These commands will be processed by application. Tags like <TAG> are likely placeholder
 
@@ -73,21 +74,12 @@ DEPTH_SEGMENTATION = "<DATA_SRC> ! qtivtransform ! \
             constants=\"Midas,q-offsets=<0.0>,q-scales=<4.716535568237305>;\" ! \
         video/x-raw,width=960,height=720 ! queue ! dual.sink_1"
 
-SEGMENTATION = '<DATA_SRC> ! qtivtransform ! video/x-raw,format=NV12_Q08C,width=640,height=480,framerate=30/1 !queue ! tee name=split \
-split. ! queue ! qtivcomposer name=mixer sink_1::alpha=0.65 ! queue ! <SINGLE_DISPLAY> \
-split. ! queue ! \
-  qtimlvconverter ! queue ! \
-  qtimltflite \
-      delegate=external \
-      external-delegate-path=libQnnTFLiteDelegate.so \
-      external-delegate-options="QNNExternalDelegate,backend_type=htp" \
-      model=/etc/models/deeplabv3_plus_mobilenet_quantized.tflite ! queue ! \
-  qtimlvsegmentation \
-      module=deeplab-argmax \
-      labels=/etc/labels/deeplabv3_resnet50.labels \
-      constants="deeplab,q-offsets=<0.0>,q-scales=<1.0>;" ! \
-  video/x-raw,format=BGRA,width=640,height=480 ! \
-  queue ! mixer.'
+SEGMENTATION = '<DATA_SRC> ! qtivtransform ! video/x-raw,format=NV12_Q08C,width=640,height=480,framerate=10/1 ! queue ! tee name=split \
+split. ! queue ! qtivcomposer name=mixer sink_1::alpha=0.5 ! queue ! <SINGLE_DISPLAY> \
+split. ! queue ! qtimlvconverter ! queue ! qtimltflite delegate=external external-delegate-path=libQnnTFLiteDelegate.so \
+external-delegate-options="QNNExternalDelegate,backend_type=htp;" model=/etc/models/fcn_resnet50_quantized.tflite ! queue ! \
+qtimlvsegmentation module=deeplab-argmax labels=/etc/labels/voc_segmentation.labels \
+constants="deeplab,q-offsets=<0.0>,q-scales=<1.0>;" ! video/x-raw,format=BGRA,width=256,height=144 ! queue ! mixer.'
 
 
 APP_NAME = f"QCS6490 Vision AI"
